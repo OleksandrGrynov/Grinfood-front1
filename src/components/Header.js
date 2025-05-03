@@ -1,97 +1,163 @@
 import React, { useState, useEffect } from 'react';
-import './Header.css';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-import { Link } from 'react-router-dom';
+import './Header.scss';
+import { onAuthStateChanged, signOut, getIdToken } from 'firebase/auth';
+import { auth } from '../firebase';
+import { Link, useNavigate } from 'react-router-dom';
+import { useCart } from './CartContext';
+import UpsellModal from './UpsellModal';
+import { fetchMenu } from '../api';
 
 function Header({ onAuthClick }) {
     const [user, setUser] = useState(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [cartCount, setCartCount] = useState(0);
+    const [role, setRole] = useState(null);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [upsellOpen, setUpsellOpen] = useState(false);
+    const [suggestions, setSuggestions] = useState([]);
 
-    const auth = getAuth();
+    const { cartItems, clearCart } = useCart();
+    const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    const navigate = useNavigate();
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             setUser(firebaseUser);
+            if (firebaseUser) {
+                const token = await getIdToken(firebaseUser);
+                const res = await fetch(`${process.env.REACT_APP_API_URL}/get-role`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await res.json();
+                setRole(data.role);
+            } else {
+                setRole(null);
+            }
         });
         return () => unsubscribe();
     }, []);
 
-    useEffect(() => {
-        const updateCartCount = () => {
-            const cart = JSON.parse(localStorage.getItem('cart')) || [];
-            setCartCount(cart.length);
-        };
-
-        updateCartCount(); // одразу
-
-        // Слухач для змін у localStorage
-        window.addEventListener('storage', updateCartCount);
-        return () => window.removeEventListener('storage', updateCartCount);
-    }, []);
-
     const handleLogout = async () => {
-        await signOut(auth);
-        setUser(null);
-        setDropdownOpen(false);
+        try {
+            await signOut(auth);
+            setUser(null);
+            setDropdownOpen(false);
+            setRole(null);
+            setMobileMenuOpen(false);
+
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('cart');
+            localStorage.removeItem('reviews');
+
+            clearCart();
+            navigate('/');
+        } catch (err) {
+            console.error('❌ Logout error:', err);
+        }
+    };
+
+    const closeMobileMenu = () => setMobileMenuOpen(false);
+
+    const handleCartClick = async () => {
+        try {
+            const all = await fetchMenu();
+            const recommended = all
+                .filter((item) => item.active !== false)
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 3);
+            setSuggestions(recommended);
+            setUpsellOpen(true);
+        } catch (err) {
+            console.error('❌ Upsell load error:', err);
+            navigate('/order');
+        }
     };
 
     return (
         <header className="header">
-            <nav className="nav">
-                <ul className="nav-links left">
-                    <li><Link to="/">🏠 Головна</Link></li>
-                    <li><a href="#">Акції</a></li>
-                    <li><a href="#">Відгуки</a></li>
-                    <li><a href="#">Доставка</a></li>
-                    <li><Link to="/menu">🍔 Меню</Link></li>
-                </ul>
-
-                <div className="logo">
-                    <Link to="/">
+            <nav className="navbar">
+                <div className="nav-logo">
+                    <Link to="/" onClick={closeMobileMenu}>
                         <img src="/logo.png" alt="Grinfood Logo" />
                     </Link>
                 </div>
 
-                <ul className="nav-links right">
-                    <li>📍 Хмельницький</li>
-                    <li>
-                        <Link to="/order">
-                            🛒 Кошик {cartCount > 0 && `(${cartCount})`}
-                        </Link>
-                    </li>
-                    <li style={{ position: 'relative' }}>
-                        {user ? (
-                            <>
-                                <span
-                                    style={{ cursor: 'pointer', color: 'purple' }}
-                                    onClick={() => setDropdownOpen(!dropdownOpen)}
-                                >
-                                    👤 {user.displayName || user.email}
-                                </span>
-                                {dropdownOpen && (
-                                    <div className="dropdown-menu">
-                                        <div onClick={() => alert("Редагування профілю ще не реалізовано")}>
-                                            ✏️ Редагувати профіль
-                                        </div>
-                                        <div onClick={handleLogout}>
-                                            🚪 Вийти
-                                        </div>
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <span
-                                className="auth-link"
-                                style={{ cursor: 'pointer', color: 'purple' }}
-                                onClick={() => onAuthClick('signin')}
-                            >
-                                👤 Вхід
-                            </span>
+                <button
+                    className="burger"
+                    onClick={() => setMobileMenuOpen(prev => !prev)}
+                    aria-label="Toggle menu"
+                >
+                    <span className="bar"></span>
+                    <span className="bar"></span>
+                    <span className="bar"></span>
+                </button>
+
+                <div className={`nav-menu ${mobileMenuOpen ? 'open' : ''}`}>
+                    <div className="nav-section left">
+                        <Link to="/" onClick={closeMobileMenu}>🏠 Головна</Link>
+                        <Link to="/promotions" onClick={closeMobileMenu}>🎁 Акції</Link>
+                        <Link to="/reviews" onClick={closeMobileMenu}>Відгуки</Link>
+                        <Link to="/delivery">Доставка</Link>
+                    </div>
+
+                    <div className="nav-section right">
+                        <span onClick={handleCartClick} style={{ cursor: 'pointer' }}>
+                            🛒 {cartCount > 0 && <span>({cartCount})</span>}
+                        </span>
+
+                        {role === 'manager' && (
+                            <Link to="/manager" className="manager-btn" onClick={closeMobileMenu}>
+                                🧑‍💼 Менеджер
+                            </Link>
                         )}
-                    </li>
-                </ul>
+
+                        <div className="profile-container">
+                            {user ? (
+                                <>
+                                    <span
+                                        className="profile-name"
+                                        onClick={() => setDropdownOpen(!dropdownOpen)}
+                                    >
+                                        👤 {user.displayName || user.email}
+                                    </span>
+
+                                    {dropdownOpen && (
+                                        <div className="dropdown-menu">
+                                            <Link to="/profile" onClick={() => {
+                                                setDropdownOpen(false);
+                                                closeMobileMenu();
+                                            }}>
+                                                ✏️ Профіль
+                                            </Link>
+                                            <div onClick={handleLogout}>🚪 Вийти</div>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <span
+                                    className="auth-link"
+                                    onClick={() => {
+                                        onAuthClick('signin');
+                                        closeMobileMenu();
+                                    }}
+                                >
+                                    👤
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </nav>
+
+            <UpsellModal
+                open={upsellOpen}
+                onClose={() => setUpsellOpen(false)}
+                suggestions={suggestions}
+                onProceed={() => {
+                    setUpsellOpen(false);
+                    navigate('/order');
+                }}
+            />
         </header>
     );
 }

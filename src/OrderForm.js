@@ -1,40 +1,104 @@
 import React, { useState, useEffect } from 'react';
+import { useCart } from './components/CartContext';
+import { toast } from 'react-toastify';
+import './OrderForm.scss';
+import MapView from './MapView';
+import { sendOtp, verifyOtp, submitOrder } from './api';
 
 const OrderForm = () => {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('+380');
-    const [address, setAddress] = useState('');
+    const [street, setStreet] = useState('');
+    const [houseNumber, setHouseNumber] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('');
-    const [items, setItems] = useState([]);
-    const [total, setTotal] = useState(0);
     const [nameError, setNameError] = useState('');
     const [phoneError, setPhoneError] = useState('');
     const [addressError, setAddressError] = useState('');
     const [paymentError, setPaymentError] = useState('');
+    const [showPaymentButtons, setShowPaymentButtons] = useState(false);
+    const [loadingPayment, setLoadingPayment] = useState(false);
+    const [total, setTotal] = useState(0);
 
-    // Завантажити кошик
-    useEffect(() => {
-        const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
-        const cartWithQuantity = storedCart.map(item => ({ ...item, quantity: item.quantity || 1 }));
-        setItems(cartWithQuantity);
-    }, []);
+    const [phoneVerified, setPhoneVerified] = useState(false);
+    const [verificationCode, setVerificationCode] = useState('');
+    const { cartItems, clearCart, updateQuantity, removeItem } = useCart();
 
-    // Перерахунок загальної суми
+    const address = `${street} ${houseNumber}`.trim();
+
     useEffect(() => {
-        const newTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const newTotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
         setTotal(newTotal);
-        localStorage.setItem('cart', JSON.stringify(items));
-    }, [items]);
+    }, [cartItems]);
 
-    const updateQuantity = (index, value) => {
-        const updatedItems = [...items];
-        updatedItems[index].quantity = Math.max(1, parseInt(value) || 1);
-        setItems(updatedItems);
+    const sendVerificationCode = async () => {
+        if (!phone || phone.length < 13) {
+            setPhoneError('❗ Введіть коректний номер телефону');
+            return;
+        }
+
+        const data = await sendOtp(phone);
+
+        if (data.status === 'pending') {
+            toast.success('📲 Код відправлено!');
+        } else {
+            toast.error('❌ Не вдалося надіслати код');
+        }
     };
 
-    const removeItem = (index) => {
-        const updatedItems = items.filter((_, i) => i !== index);
-        setItems(updatedItems);
+    const confirmCode = async () => {
+        if (!verificationCode.trim()) {
+            toast.error('❗ Введіть код підтвердження');
+            return;
+        }
+
+        const data = await verifyOtp(phone, verificationCode);
+
+        if (data.status === 'approved') {
+            setPhoneVerified(true);
+            toast.success('✅ Номер підтверджено!');
+        } else {
+            toast.error('❌ Невірний код');
+        }
+    };
+
+    const sendOrder = async (paymentStatus) => {
+        try {
+            const order = {
+                items: cartItems,
+                total,
+                customer: { name, phone },
+                address: `Хмельницький, ${address}`,
+                paymentMethod: paymentStatus
+            };
+
+            const response = await submitOrder(order);
+
+            if (response.error) throw new Error(response.error);
+
+            clearCart();
+            setShowPaymentButtons(false);
+            toast.success('✅ Замовлення успішно створено!');
+            setName('');
+            setPhone('+380');
+            setStreet('');
+            setHouseNumber('');
+            setPaymentMethod('');
+            setPhoneVerified(false);
+            setVerificationCode('');
+        } catch (error) {
+            toast.error('❌ Помилка при створенні замовлення');
+        }
+    };
+
+    const handleFakePayment = async (provider) => {
+        setLoadingPayment(true);
+        try {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await sendOrder(`card (${provider} оплачено)`);
+            alert(`✅ Оплата через ${provider} успішна! Замовлення створено.`);
+        } finally {
+            setLoadingPayment(false);
+        }
     };
 
     const handleSubmit = async () => {
@@ -43,148 +107,147 @@ const OrderForm = () => {
         setAddressError('');
         setPaymentError('');
 
-        // Перевірка імені (не можна вводити цифри)
         if (!name.trim() || /\d/.test(name)) {
             setNameError('❗ Введіть коректне ім’я без цифр');
             return;
         }
-
-        // Перевірка телефону (лише чи введено значення)
-        if (!phone.trim()) {
-            setPhoneError('❗ Введіть номер телефону');
+        if (!phone.trim() || phone.length < 13) {
+            setPhoneError('❗ Введіть коректний номер телефону');
             return;
         }
-
-        // Перевірка адреси
-        if (!address.trim()) {
-            setAddressError('❗ Введіть вашу адресу');
+        if (!street.trim() || !houseNumber.trim()) {
+            setAddressError('❗ Введіть вулицю та номер будинку');
             return;
         }
-
-        // Перевірка методу оплати
         if (!paymentMethod) {
             setPaymentError('❗ Оберіть метод оплати');
             return;
         }
+        if (!phoneVerified) {
+            setPhoneError('📲 Підтвердіть номер телефону через SMS');
+            return;
+        }
 
-        const order = {
-            customer: { name, phone, address, paymentMethod },
-            items,
-            total,
-        };
-
-        const res = await fetch('http://localhost:5000/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(order),
-        });
-
-        if (res.ok) {
-            alert('✅ Замовлення відправлено');
-            localStorage.removeItem('cart');
-            setItems([]);
-            setTotal(0);
+        if (paymentMethod === 'card') {
+            setShowPaymentButtons(true);
         } else {
-            alert('❌ Помилка при надсиланні замовлення');
+            await sendOrder('готівка');
         }
     };
 
-    // Маска для телефону, дозволяє тільки цифри після +380
     const handlePhoneChange = (e) => {
-        let value = e.target.value.replace(/[^\d+]/g, ''); // дозволяємо тільки цифри і '+'
+        let value = e.target.value.replace(/[^\d+]/g, '');
+        if (!value.startsWith('+380')) value = '+380';
+        if (value.length > 13) value = value.slice(0, 13);
+        setPhone(value);
+    };
 
-        if (value.startsWith('+380') && value.length <= 13) {
-            value = value.replace(/(\+380)(\d{3})(\d{3})(\d{3})/, '+380 $2 $3 $4');
+    const buttonStyle = (backgroundColor) => ({
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: '10px', width: '100%', maxWidth: '300px', padding: '12px 20px',
+        margin: '10px 0', borderRadius: '8px', fontSize: '16px',
+        fontWeight: 'bold', cursor: 'pointer', border: 'none', color: 'white',
+        transition: 'all 0.3s ease', backgroundColor
+    });
+
+    const spinnerStyle = {
+        width: '40px', height: '40px', border: '5px solid #f3f3f3',
+        borderTop: '5px solid #4285F4', borderRadius: '50%',
+        animation: 'spin 1s linear infinite', margin: '20px auto'
+    };
+
+    const spinnerKeyframes = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-
-        if (value.length <= 13) {
-            setPhone(value);
-        }
-    };
-
-    const handlePaymentChange = (e) => {
-        setPaymentMethod(e.target.value);
-    };
-
-    // Обробка зміни імені (щоб не вводились цифри)
-    const handleNameChange = (e) => {
-        const value = e.target.value.replace(/[0-9]/g, ''); // видаляємо всі цифри
-        setName(value);
-    };
+    `;
 
     return (
-        <div style={{ padding: '20px' }}>
-            <h2>Оформлення замовлення</h2>
-
-            {items.length === 0 ? (
-                <p>Кошик порожній 🛒</p>
-            ) : (
-                <ul style={{ listStyle: 'none', padding: 0 }}>
-                    {items.map((item, idx) => (
-                        <li key={idx} style={{
-                            marginBottom: '15px',
-                            padding: '10px',
-                            background: '#fff',
-                            borderRadius: '10px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '20px'
-                        }}>
-                            <img src={item.image} alt={item.name} width="70" height="70" style={{ objectFit: 'cover', borderRadius: '8px' }} />
-                            <div style={{ flexGrow: 1 }}>
-                                <strong>{item.name}</strong><br />
-                                <span>{item.price}₴</span>
+        <div className="orderFormWrapper" style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
+            <style>{spinnerKeyframes}</style>
+            <div className="orderForm" style={{ flex: 1, minWidth: '350px' }}>
+                <h2>Оформлення замовлення</h2>
+                <h3>🛒 Товари в кошику:</h3>
+                {cartItems.length === 0 ? (
+                    <p>Кошик порожній</p>
+                ) : (
+                    cartItems.map((item, index) => (
+                        <div className="cartItem" key={item.id}>
+                            <img src={item.image} alt={item.name} />
+                            <div className="details">
+                                <strong>{item.name}</strong>
+                                <p>{item.price}₴</p>
                             </div>
-                            <input
-                                type="number"
-                                min="1"
-                                value={item.quantity}
-                                onChange={(e) => updateQuantity(idx, e.target.value)}
-                                style={{ width: '60px' }}
-                            />
-                            <button onClick={() => removeItem(idx)} style={{ color: 'red' }}>✖</button>
-                        </li>
-                    ))}
-                </ul>
-            )}
+                            <div className="quantityControls">
+                                <button onClick={() => updateQuantity(index, Math.max(1, item.quantity - 1))}>−</button>
+                                <span>{item.quantity}</span>
+                                <button onClick={() => updateQuantity(index, item.quantity + 1)}>+</button>
+                            </div>
+                            <button onClick={() => removeItem(index)} className="removeBtn">🗑</button>
+                        </div>
+                    ))
+                )}
 
-            <p><strong>Загальна сума:</strong> {total}₴</p>
+                <p><strong>Загальна сума:</strong> {total}₴</p>
 
-            <input
-                placeholder="Ваше ім’я"
-                value={name}
-                onChange={handleNameChange}
-            />
-            {nameError && <p style={{ color: 'red' }}>{nameError}</p>}
+                <input placeholder="Ваше ім’я" value={name} onChange={(e) => setName(e.target.value.replace(/[0-9]/g, ''))} />
+                {nameError && <p style={{ color: 'red' }}>{nameError}</p>}
 
-            <input
-                placeholder="Номер телефону"
-                value={phone}
-                onChange={handlePhoneChange}
-            />
-            {phoneError && <p style={{ color: 'red' }}>{phoneError}</p>}
+                <input placeholder="Номер телефону" value={phone} onChange={handlePhoneChange} />
+                {phoneError && <p style={{ color: 'red' }}>{phoneError}</p>}
 
-            <input
-                placeholder="Ваша адреса"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-            />
-            {addressError && <p style={{ color: 'red' }}>{addressError}</p>}
+                {!phoneVerified && (
+                    <>
+                        <input placeholder="Код" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} />
+                        <button onClick={confirmCode} className="smsButton confirm">✅ Підтвердити код</button>
+                        <button onClick={sendVerificationCode} className="smsButton send">📲 Надіслати SMS-код</button>
 
-            <div>
-                <label>
-                    <select value={paymentMethod} onChange={handlePaymentChange}>
-                        <option value="">Оберіть метод оплати</option>
-                        <option value="cash">Готівка</option>
-                        <option value="card">Карта</option>
-                    </select>
-                </label>
+                    </>
+                )}
+                {phoneVerified && <p style={{ color: 'green' }}>✅ Підтверджено</p>}
+
+                <input placeholder="Вулиця" value={street} onChange={(e) => setStreet(e.target.value)} />
+                <input placeholder="№ будинку" value={houseNumber} onChange={(e) => setHouseNumber(e.target.value)} />
+                {addressError && <p style={{ color: 'red' }}>{addressError}</p>}
+
+                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+                    <option value="">Оберіть метод оплати</option>
+                    <option value="cash">Готівка</option>
+                    <option value="card">Карта (Google/Apple Pay)</option>
+                </select>
+                {paymentError && <p style={{ color: 'red' }}>{paymentError}</p>}
+
+                {!showPaymentButtons ? (
+                    <button
+                        onClick={handleSubmit}
+                        disabled={cartItems.length === 0}
+                        className="submitOrderBtn"
+                    >
+                        Замовити
+                    </button>
+
+                ) : loadingPayment ? (
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={spinnerStyle}></div>
+                        <p><strong>Оплата триває...</strong></p>
+                    </div>
+                ) : (
+                    <div>
+                        <button onClick={() => handleFakePayment('Google Pay')} style={buttonStyle('#4285F4')}>
+                            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcROIppzLqCf0VqsxIo3tBzMe2OzdipG3iIMIg&s" alt="Google" width="20" />
+                            Оплатити через Google Pay
+                        </button>
+                        <button onClick={() => handleFakePayment('Apple Pay')} style={buttonStyle('#000')}>
+                            <img src="https://cdn-icons-png.flaticon.com/512/5968/5968279.png" alt="Apple" width="20" />
+                            Оплатити через Apple Pay
+                        </button>
+                    </div>
+                )}
             </div>
-            {paymentError && <p style={{ color: 'red' }}>{paymentError}</p>}
-
-            <button onClick={handleSubmit} disabled={items.length === 0}>
-                Замовити
-            </button>
+            <div style={{ flex: 1, minWidth: '350px', height: '600px' }}>
+                <MapView address={`Хмельницький, ${address}`} />
+            </div>
         </div>
     );
 };

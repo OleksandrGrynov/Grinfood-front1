@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { getAuth, updateProfile } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
+import { getAuth, signInWithCustomToken } from 'firebase/auth';
 
 const SignUp = ({ onSuccess, setError }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const navigate = useNavigate();
 
     const handleSignUp = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch('http://localhost:5000/api/signup', {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, email, password }),
@@ -20,14 +22,15 @@ const SignUp = ({ onSuccess, setError }) => {
 
             console.log('✅ Реєстрація успішна:', data);
 
-            // ✅ Після бекенду — оновлюємо displayName через Firebase Auth
+            // 🔐 Вхід через кастомний токен з бекенду
             const auth = getAuth();
-            await auth.currentUser.reload(); // оновлюємо дані користувача
-            await updateProfile(auth.currentUser, { displayName: name });
+            await signInWithCustomToken(auth, data.token);
+            const idToken = await auth.currentUser.getIdToken();
 
-            // ⟳ Перезавантаження, щоб Header показав нове ім'я
-            window.location.reload();
+            localStorage.setItem('token', idToken);
 
+            if (onSuccess) onSuccess();
+            navigate('/');
         } catch (err) {
             console.error('❌ Реєстрація помилка:', err.message);
             setError(err.message);
@@ -36,21 +39,9 @@ const SignUp = ({ onSuccess, setError }) => {
 
     return (
         <form onSubmit={handleSignUp}>
-
-            <input
-                type="email"
-                placeholder="Електронна пошта"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-            />
-            <input
-                type="password"
-                placeholder="Пароль"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-            />
+            <input type="text" placeholder="Ім’я" value={name} onChange={(e) => setName(e.target.value)} required />
+            <input type="email" placeholder="Електронна пошта" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input type="password" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} required />
             <button type="submit">Зареєструватися</button>
         </form>
     );

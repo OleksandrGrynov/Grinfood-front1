@@ -1,0 +1,248 @@
+.orderForm {
+  padding: 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+
+  h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: #333;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+
+    &:focus {
+      border-color: #1e88e5;
+      outline: none;
+    }
+  }
+
+  .errorText {
+    color: red;
+    margin: -0.5rem 0 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .cartItem {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+
+    img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+
+    .details {
+      flex-grow: 1;
+    }
+
+    input[type='number'] {
+      width: 60px;
+    }
+
+    button {
+      background: transparent;
+      border: none;
+      color: red;
+      height: 50px;
+      width: 50px;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+  }
+
+  .submitBtn {
+    width: 100%;
+    padding: 1rem;
+    background-color: #1e88e5;
+    color: white;
+    border: none;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    &:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+      background-color: #1669bb;
+    }
+  }
+
+  .recaptcha {
+    display: none;
+  }
+}
+.orderPageLayout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+
+  .formContainer {
+    flex: 1;
+    max-width: 600px;
+  }
+
+  .mapContainer {
+    flex: 1;
+    min-width: 400px;
+    height: 600px;
+
+    #map,
+    .leaflet-container {
+      height: 100%;
+      width: 100%;
+    }
+  }
+  .leaflet-control-zoom {
+    top: auto !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    z-index: 1000 !important;
+  }
+  .cartItem {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+
+    img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+
+    .details {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+
+      strong {
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
+      }
+
+      p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #555;
+      }
+    }
+
+    .quantityControls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      button {
+        width: 32px;
+        height: 32px;
+        border: 1px solid #ccc;
+        background: #f8f8f8;
+        border-radius: 6px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #e0e0e0;
+        }
+      }
+
+      span {
+        min-width: 20px;
+        text-align: center;
+        font-weight: bold;
+      }
+    }
+
+    .removeBtn {
+      background: none;
+      border: none;
+      color: #e53935;
+      font-size: 20px;
+      cursor: pointer;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: #b71c1c;
+      }
+    }
+  }
+
+
+}
+.smsButton {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+
+  &.confirm {
+    background-color: #4caf50;
+
+    &:hover {
+      background-color: #3c9140;
+    }
+  }
+
+  &.send {
+    background-color: #1e88e5;
+
+    &:hover {
+      background-color: #1669bb;
+    }
+  }
+}
+.submitOrderBtn {
+  width: 100%;
+  padding: 1rem;
+  background-color: #2ecc71; // яскраво-зелений
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background-color: #27ae60; // темніший при hover
+    transform: scale(1.01);
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+}
