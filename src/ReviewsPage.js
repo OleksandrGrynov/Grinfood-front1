@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import './ReviewsPage.scss';
+import './styles/ReviewsPage.scss';
 
 const StarRating = ({ value, onChange, name }) => (
     <div className="stars">
@@ -10,8 +10,8 @@ const StarRating = ({ value, onChange, name }) => (
                 className={star <= value ? 'filled' : ''}
                 onClick={() => onChange(name, star)}
             >
-        ★
-      </span>
+                ★
+            </span>
         ))}
     </div>
 );
@@ -25,6 +25,7 @@ const ReviewsPage = ({ openAuth }) => {
         comment: '',
     });
     const [loading, setLoading] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState(null);
     const isAuthenticated = !!localStorage.getItem('token');
 
     const fetchReviews = async () => {
@@ -38,6 +39,22 @@ const ReviewsPage = ({ openAuth }) => {
 
     useEffect(() => {
         fetchReviews();
+
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const fetchUid = async () => {
+            try {
+                const res = await axios.get(`${process.env.REACT_APP_API_URL}/check-auth`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setCurrentUserId(res.data.uid);
+            } catch (err) {
+                console.warn('🔐 Не вдалося отримати поточного користувача');
+            }
+        };
+
+        fetchUid();
     }, []);
 
     const handleChange = (name, value) => {
@@ -83,6 +100,21 @@ const ReviewsPage = ({ openAuth }) => {
         }
     };
 
+    const handleDeleteReview = async (id) => {
+        if (!window.confirm('Ви дійсно хочете видалити цей відгук?')) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`${process.env.REACT_APP_API_URL}/reviews/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchReviews();
+        } catch (err) {
+            console.error('❌ Не вдалося видалити відгук:', err);
+            alert('Помилка при видаленні відгуку.');
+        }
+    };
+
     return (
         <div className="reviews-page">
             <h2>Відгуки</h2>
@@ -115,13 +147,22 @@ const ReviewsPage = ({ openAuth }) => {
                         <div className="review-header">
                             <strong>{r.userName || 'Анонім'}</strong>
                             <span className="review-date">
-                {r.createdAt?.seconds ? new Date(r.createdAt.seconds * 1000).toLocaleString() : ''}
-              </span>
+                                {r.createdAt?.seconds
+                                    ? new Date(r.createdAt.seconds * 1000).toLocaleString()
+                                    : ''}
+                            </span>
                         </div>
                         <p><strong>Меню:</strong> {r.ratingMenu} ⭐</p>
                         <p><strong>Персонал:</strong> {r.ratingStaff} ⭐</p>
                         <p><strong>Доставка:</strong> {r.ratingDelivery} ⭐</p>
                         <p>{r.comment}</p>
+
+                        {currentUserId === r.userId && (
+                            <button className="delete-review-btn" onClick={() => handleDeleteReview(r.id)}>
+                                🗑 Видалити
+                            </button>
+                        )}
+
                         <hr />
                     </div>
                 ))}

@@ -1,0 +1,147 @@
+.promotions-page {
+  padding: 3rem 0;
+
+  .title {
+    text-align: center;
+    font-weight: 600;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .promo-grid {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+
+  .promo-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background-color: #fff;
+    height: 100%;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    &:hover {
+      transform: scale(1.02);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    }
+
+    .promo-image {
+      height: 180px;
+      object-fit: cover;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+      width: 100%;
+    }
+
+    .promo-content {
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-grow: 1;
+
+      h6 {
+        font-weight: 600;
+        margin-bottom: 1rem;
+      }
+
+      button {
+        margin-top: auto;
+      }
+    }
+  }
+
+  .promo-dialog {
+    .MuiDialog-paper {
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .MuiDialogTitle-root {
+      padding: 1.5rem 2rem 1rem;
+      font-weight: 600;
+      position: relative;
+    }
+
+    .MuiDialogContent-root {
+      padding: 1rem 2rem 2rem;
+      white-space: pre-wrap;
+    }
+
+    .close-button {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      height: 50px;
+      width: 50px;
+    }
+  }
+}
+@media (max-width: 600px) {
+  .promotions-page {
+    padding: 2rem 1rem;
+
+    .title {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .promo-grid {
+      gap: 1.5rem;
+      grid-template-columns: 1fr; // Одна колонка на вузьких екранах
+    }
+
+    .promo-card {
+      .promo-image {
+        height: 150px;
+      }
+
+      .promo-content {
+        padding: 0.75rem;
+
+        h6 {
+          font-size: 1rem;
+          margin-bottom: 0.75rem;
+        }
+
+        button {
+          font-size: 0.95rem;
+        }
+      }
+    }
+
+    .promo-dialog {
+      img {
+        height: 150px;
+      }
+
+      .MuiDialogTitle-root {
+        padding: 1rem 1.5rem 0.75rem;
+        font-size: 1rem;
+      }
+
+      .MuiDialogContent-root {
+        padding: 0.75rem 1.5rem 1.5rem;
+        font-size: 0.95rem;
+      }
+
+      .close-button {
+        top: 10px;
+        right: 10px;
+        height: 36px;
+        width: 36px;
+      }
+    }
+  }
+}

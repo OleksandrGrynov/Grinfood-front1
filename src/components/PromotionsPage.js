@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { fetchPromotions } from '../api';
+import '../styles/PromotionsPage.scss';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
@@ -61,40 +62,36 @@ const PromotionsPage = () => {
     };
 
     return (
-        <Container sx={{ py: 6 }}>
-            <Typography variant="h3" fontWeight={600} textAlign="center" mb={4}>
+        <Container className="promotions-page">
+            <Typography className="title" variant="h3">
                 ✨ Акції та пропозиції
             </Typography>
-            <Grid container spacing={4}>
+
+            <div className="promo-grid">
                 {promotions.map((promo) => (
-                    <Grid item xs={12} sm={6} md={4} key={promo.id}>
-                        <Card sx={{ boxShadow: 4, borderRadius: 3 }}>
-                            {promo.image && (
-                                <CardMedia
-                                    component="img"
-                                    image={promo.image}
-                                    alt={promo.title}
-                                    sx={{ height: 180, objectFit: 'cover' }}
-                                />
-                            )}
-                            <CardContent>
-                                <Typography variant="h6" fontWeight={600} gutterBottom>
-                                    {promo.title}
-                                </Typography>
-                                <Button
-                                    variant="contained"
-                                    color="warning"
-                                    onClick={() => handleOpenModal(promo)}
-                                    sx={{ mt: 2 }}
-                                    fullWidth
-                                >
-                                    Детальніше
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    </Grid>
+                    <div className="promo-card" key={promo.id} onClick={() => handleOpenModal(promo)} style={{ cursor: 'pointer' }}>
+
+                    {promo.image && (
+                            <img
+                                src={promo.image}
+                                alt={promo.title}
+                                className="promo-image"
+                            />
+                        )}
+                        <div className="promo-content">
+                            <Typography variant="h6">{promo.title}</Typography>
+                            <Button
+                                variant="contained"
+                                color="warning"
+                                fullWidth
+                                onClick={() => handleOpenModal(promo)}
+                            >
+                                Детальніше
+                            </Button>
+                        </div>
+                    </div>
                 ))}
-            </Grid>
+            </div>
 
             <Dialog
                 open={openModal}
@@ -102,36 +99,23 @@ const PromotionsPage = () => {
                 maxWidth="sm"
                 fullWidth
                 TransitionComponent={Transition}
-                PaperProps={{
-                    sx: {
-                        borderRadius: 4,
-                        overflow: 'hidden',
-                        position: 'relative',
-                    }
-                }}
+                className="promo-dialog"
             >
                 {selectedPromo?.image && (
-                    <Box sx={{ height: 200, overflow: 'hidden' }}>
-                        <img
-                            src={selectedPromo.image}
-                            alt={selectedPromo.title}
-                            style={{ width: '100%', objectFit: 'cover' }}
-                        />
-                    </Box>
+                    <img
+                        src={selectedPromo.image}
+                        alt={selectedPromo.title}
+                    />
                 )}
-
-                <DialogTitle sx={{ px: 3, pt: 2, pb: 1 }}>
+                <DialogTitle>
                     <Typography variant="h6">{selectedPromo?.title}</Typography>
-                    <IconButton
-                        onClick={handleCloseModal}
-                        sx={{ position: 'absolute', top: 12, right: 12, height: 50, width: 50 }}
-                    >
+                    <IconButton onClick={handleCloseModal} sx={{ position: 'absolute', top: 12, right: 12, height: 50, width: 50 }}>
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent sx={{ px: 3 }}>
-                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                <DialogContent>
+                    <Typography variant="body1">
                         {selectedPromo?.description}
                     </Typography>
                 </DialogContent>

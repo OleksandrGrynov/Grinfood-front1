@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import { Edit, Delete, Category, Image, Title, AttachMoney, Description } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import { getAuth } from 'firebase/auth';
 
 const API_URL = process.env.REACT_APP_API_URL;
 const CATEGORIES = ['Бургери', 'Піца', 'Снеки', 'Напої', 'Салати', 'Десерти'];
@@ -33,7 +34,10 @@ const ManagerMenu = () => {
     const [editingId, setEditingId] = useState(null);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-    const token = localStorage.getItem('token');
+    const getToken = async () => {
+        const user = getAuth().currentUser;
+        return user ? await user.getIdToken() : null;
+    };
 
     const fetchMenu = async () => {
         try {
@@ -60,6 +64,7 @@ const ManagerMenu = () => {
         const body = JSON.stringify({ name, price: +price, image, category, description });
 
         try {
+            const token = await getToken();
             const res = await fetch(url, {
                 method,
                 headers: {
@@ -94,16 +99,22 @@ const ManagerMenu = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('❗ Видалити позицію?')) return;
 
-        const res = await fetch(`${API_URL}/menu/${id}`, {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        try {
+            const token = await getToken();
+            const res = await fetch(`${API_URL}/menu/${id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
-        if (res.ok) {
-            showSnackbar('🗑 Видалено');
-            fetchMenu();
-        } else {
-            showSnackbar('❌ Помилка видалення', 'error');
+            if (res.ok) {
+                showSnackbar('🗑 Видалено');
+                fetchMenu();
+            } else {
+                showSnackbar('❌ Помилка видалення', 'error');
+            }
+        } catch (err) {
+            console.error('❌ Delete error:', err);
+            showSnackbar('❌ Сталася помилка', 'error');
         }
     };
 

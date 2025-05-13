@@ -1,15 +1,15 @@
-// ✅ ОНОВЛЕНИЙ Menu.js з однаковими розмірами карток
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-    Container, Grid, Card, CardContent, CardMedia, Typography,
-    Button, TextField, Stack, Chip, Select, MenuItem, InputLabel,
-    FormControl, Box
+    Container, Grid, Typography, Button, TextField, Stack,
+    Chip, Select, MenuItem, InputLabel, FormControl, Box, CardContent, CardMedia, Card
 } from '@mui/material';
-import { fetchMenu } from './api';
+import { fetchMenu, fetchUserOrders } from './api';
 import { useCart } from './components/CartContext';
 import { toast } from 'react-toastify';
 import DishModal from './components/DishModal';
+import OrderHistoryDialog from './components/OrderHistoryDialog';
+import './styles/Menu.scss';
 
 const categories = ['Усі', 'Бургери', 'Піца', 'Снеки', 'Напої', 'Салати', 'Десерти'];
 const sortOptions = [
@@ -29,6 +29,8 @@ const Menu = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('name_asc');
     const [selectedDish, setSelectedDish] = useState(null);
+    const [orders, setOrders] = useState([]);
+    const [ordersOpen, setOrdersOpen] = useState(false);
     const { addItem } = useCart();
 
     useEffect(() => {
@@ -59,11 +61,27 @@ const Menu = () => {
         })
     );
 
+    const handleLoadOrders = async () => {
+        try {
+            const data = await fetchUserOrders();
+            setOrders(data);
+            setOrdersOpen(true);
+        } catch (err) {
+            toast.error('❌ Не вдалося завантажити замовлення');
+        }
+    };
+
     return (
-        <Container sx={{ py: 5 }}>
+        <Container className="menu-wrapper">
             <Typography variant="h4" fontWeight="bold" gutterBottom>
                 🍽 Меню
             </Typography>
+
+            <Box mb={2}>
+                <Button variant="outlined" onClick={handleLoadOrders}>
+                    📦 Мої замовлення
+                </Button>
+            </Box>
 
             <Stack spacing={2} mb={4}>
                 <TextField
@@ -84,7 +102,6 @@ const Menu = () => {
                                 variant={cat === categoryFilter ? 'filled' : 'outlined'}
                                 color={cat === categoryFilter ? 'primary' : 'default'}
                                 onClick={() => setCategoryFilter(cat)}
-                                sx={{ mb: { xs: 1, sm: 0 } }}
                             />
                         ))}
                     </Stack>
@@ -106,36 +123,22 @@ const Menu = () => {
                 </Stack>
             </Stack>
 
-            <Grid container spacing={3} alignItems="stretch">
+            <Grid container spacing={2} className="menu-grid">
                 {filteredMenu.map(item => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={item.id} sx={{ display: 'flex' }}>
+                    <Grid item xs={12} sm={6} md={4} lg={3} key={item.id}>
                         <Card
+                            className="menu-item-card"
                             onClick={() => setSelectedDish(item)}
-                            sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                flex: 1,
-                                height: '100%',
-                                justifyContent: 'space-between',
-                                borderRadius: 3,
-                                boxShadow: 4,
-                                transition: 'transform 0.2s',
-                                '&:hover': { transform: 'scale(1.02)' }
-                            }}
+                            style={{ cursor: 'pointer' }}
                         >
                             <CardMedia
                                 component="img"
                                 image={item.image}
                                 alt={item.name}
-                                sx={{
-                                    height: 180,
-                                    objectFit: 'cover',
-                                    borderTopLeftRadius: 12,
-                                    borderTopRightRadius: 12
-                                }}
+                                className="menu-item-image"
                             />
-                            <CardContent sx={{ flexGrow: 1 }}>
-                                <Typography variant="h6" gutterBottom>{item.name}</Typography>
+                            <CardContent>
+                                <Typography variant="subtitle1">{item.name}</Typography>
                                 <Typography variant="body2" color="text.secondary">
                                     💰 {item.price} ₴
                                 </Typography>
@@ -143,7 +146,7 @@ const Menu = () => {
                                     📂 {item.category}
                                 </Typography>
                             </CardContent>
-                            <Box sx={{ p: 2 }}>
+                            <Box px={2} pb={2}>
                                 <Button
                                     fullWidth
                                     variant="contained"
@@ -159,14 +162,12 @@ const Menu = () => {
                             </Box>
                         </Card>
                     </Grid>
+
                 ))}
             </Grid>
 
-            <DishModal
-                open={!!selectedDish}
-                onClose={() => setSelectedDish(null)}
-                dish={selectedDish}
-            />
+            <DishModal open={!!selectedDish} onClose={() => setSelectedDish(null)} dish={selectedDish} />
+            <OrderHistoryDialog open={ordersOpen} onClose={() => setOrdersOpen(false)} orders={orders} />
         </Container>
     );
 };

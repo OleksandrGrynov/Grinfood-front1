@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import './Header.scss';
+import '../styles/Header.scss';
 import { onAuthStateChanged, signOut, getIdToken } from 'firebase/auth';
 import { auth } from '../firebase';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from './CartContext';
 import UpsellModal from './UpsellModal';
 import { fetchMenu } from '../api';
+import logo from '../logo.png';
 
 function Header({ onAuthClick }) {
     const [user, setUser] = useState(null);
@@ -43,12 +44,7 @@ function Header({ onAuthClick }) {
             setDropdownOpen(false);
             setRole(null);
             setMobileMenuOpen(false);
-
-            localStorage.removeItem('token');
-            localStorage.removeItem('role');
-            localStorage.removeItem('cart');
-            localStorage.removeItem('reviews');
-
+            localStorage.clear();
             clearCart();
             navigate('/');
         } catch (err) {
@@ -67,6 +63,7 @@ function Header({ onAuthClick }) {
                 .slice(0, 3);
             setSuggestions(recommended);
             setUpsellOpen(true);
+            closeMobileMenu();
         } catch (err) {
             console.error('❌ Upsell load error:', err);
             navigate('/order');
@@ -78,12 +75,12 @@ function Header({ onAuthClick }) {
             <nav className="navbar">
                 <div className="nav-logo">
                     <Link to="/" onClick={closeMobileMenu}>
-                        <img src="/logo.png" alt="Grinfood Logo" />
+                        <img src={logo} alt="Grinfood Logo" />
                     </Link>
                 </div>
 
                 <button
-                    className="burger"
+                    className={`burger ${mobileMenuOpen ? 'open' : ''}`}
                     onClick={() => setMobileMenuOpen(prev => !prev)}
                     aria-label="Toggle menu"
                 >
@@ -97,11 +94,11 @@ function Header({ onAuthClick }) {
                         <Link to="/" onClick={closeMobileMenu}>🏠 Головна</Link>
                         <Link to="/promotions" onClick={closeMobileMenu}>🎁 Акції</Link>
                         <Link to="/reviews" onClick={closeMobileMenu}>Відгуки</Link>
-                        <Link to="/delivery">Доставка</Link>
+                        <Link to="/delivery" onClick={closeMobileMenu}>Доставка</Link>
                     </div>
 
                     <div className="nav-section right">
-                        <span onClick={handleCartClick} style={{ cursor: 'pointer' }}>
+                        <span onClick={handleCartClick}>
                             🛒 {cartCount > 0 && <span>({cartCount})</span>}
                         </span>
 
@@ -110,8 +107,13 @@ function Header({ onAuthClick }) {
                                 🧑‍💼 Менеджер
                             </Link>
                         )}
+                        {role === 'courier' && (
+                            <Link to="/courier/orders" className="manager-btn" onClick={closeMobileMenu}>
+                                🚚 Кур’єру
+                            </Link>
+                        )}
 
-                        <div className="profile-container">
+                        <div className="header-profile-container">
                             {user ? (
                                 <>
                                     <span

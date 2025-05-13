@@ -1,0 +1,103 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    background: #f9f9f9;
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Робить контент головним блоком, який росте */
+main {
+    flex: 1;
+}
+
+/* Центрування всередині App */
+.App {
+    text-align: center;
+}
+
+.order-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.menu-container {
+    padding: 20px;
+}
+
+.menu-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    background: white;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: left;
+}
+
+form {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+input,
+button {
+    margin: 5px 0;
+    padding: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+h1 {
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .menu-container {
+        padding: 12px;
+    }
+
+    .menu-grid {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .order-form {
+        max-width: 100%;
+        padding: 0 12px;
+    }
+
+    form {
+        padding: 12px;
+    }
+
+    input,
+    button {
+        padding: 10px;
+        font-size: 16px;
+    }
+
+    h1 {
+        font-size: 22px;
+    }
+}

@@ -10,14 +10,17 @@ import AuthModal from './components/AuthModal';
 import { CartProvider } from './components/CartContext';
 import ManagerDashboard from './components/ManagerDashboard';
 import PromotionsPage from './components/PromotionsPage';
-import Footer from './components/Footer'; // ✅ Додаємо імпорт футера
+import Footer from './components/Footer';
 import ReviewsPage from './ReviewsPage';
-import './App.scss';
+import './styles/App.scss';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import DeliveryPage from './DeliveryPage';
+import ResetPasswordPage from './ResetPasswordPage';
+import VerifyEmail from './components/VerifyEmail';
+import CourierOrders from "./components/CourierOrders";
 
 function App() {
     const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -37,44 +40,59 @@ function App() {
         <BrowserRouter>
             <CartProvider>
                 <Header onAuthClick={openAuth} />
-                <Routes>
-                    <Route path="/reviews" element={<ReviewsPage openAuth={openAuth} />} />
-                    <Route path="/delivery" element={<DeliveryPage />} />
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/menu" element={<MenuPage />} />
-                    <Route
-                        path="/order"
-                        element={
-                            <PrivateRoute openAuth={openAuth}>
-                                <OrderForm />
-                            </PrivateRoute>
-                        }
-                    />
-                    <Route
-                        path="/manager"
-                        element={
-                            <PrivateRoute openAuth={openAuth} allowedRoles={['manager']}>
-                                <ManagerDashboard />
-                            </PrivateRoute>
-                        }
-                    />
-                    <Route path="/promotions" element={<PromotionsPage />} />
-                    <Route
-                        path="/profile"
-                        element={
-                            <PrivateRoute openAuth={openAuth}>
-                                <ProfilePage />
-                            </PrivateRoute>
-                        }
-                    />
 
-                    {role === 'manager' && (
-                        <>
-                            <Route path="/pending-orders" element={<div>Очікують підтвердження</div>} />
-                            <Route path="/confirmed-orders" element={<div>Підтверджені замовлення</div>} />
-                        </>
-                    )}
-                </Routes>
+                <main>
+                    <Routes>
+                        <Route path="/reviews" element={<ReviewsPage openAuth={openAuth} />} />
+                        <Route path="/delivery" element={<DeliveryPage />} />
+                        <Route path="/" element={<HomePage />} />
+                        <Route path="/menu" element={<MenuPage />} />
+                        <Route path="/reset-password" element={<ResetPasswordPage />} />
+                        <Route path="/verify-email" element={<VerifyEmail />} />
+                        <Route
+                            path="/courier/orders"
+                            element={
+                                <PrivateRoute openAuth={openAuth} allowedRoles={['courier']}>
+                                    <CourierOrders />
+                                </PrivateRoute>
+                            }
+                        />
+
+
+                        <Route
+                            path="/order"
+                            element={
+                                <PrivateRoute openAuth={openAuth}>
+                                    <OrderForm />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="/manager"
+                            element={
+                                <PrivateRoute openAuth={openAuth} allowedRoles={['manager']}>
+                                    <ManagerDashboard />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route path="/promotions" element={<PromotionsPage />} />
+                        <Route
+                            path="/profile"
+                            element={
+                                <PrivateRoute openAuth={openAuth}>
+                                    <ProfilePage />
+                                </PrivateRoute>
+                            }
+                        />
+
+                        {role === 'manager' && (
+                            <>
+                                <Route path="/pending-orders" element={<div>Очікують підтвердження</div>} />
+                                <Route path="/confirmed-orders" element={<div>Підтверджені замовлення</div>} />
+                            </>
+                        )}
+                    </Routes>
+                </main>
 
                 {authModalOpen && (
                     <AuthModal
@@ -85,7 +103,7 @@ function App() {
                 )}
 
                 <ToastContainer position="top-center" autoClose={3000} />
-                <Footer /> {/* ✅ Футер завжди внизу */}
+                <Footer />
             </CartProvider>
         </BrowserRouter>
     );

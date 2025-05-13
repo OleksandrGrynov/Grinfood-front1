@@ -1,0 +1,481 @@
+.orderFormWrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  font-family: 'Arial', sans-serif;
+  background-color: #f8f9fa;
+}
+
+.orderForm {
+  flex: 1 1 400px;
+  max-width: 600px;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  h2 {
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+    color: #333;
+  }
+
+  h3 {
+    margin-top: 1.5rem;
+    font-size: 1.2rem;
+    color: #555;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: none;
+      border-color: #007bff;
+      background: #f0f8ff;
+    }
+  }
+
+  .address-group {
+    display: flex;
+    gap: 1rem;
+
+    .locate-btn {
+      white-space: nowrap;
+      padding: 0.75rem 1rem;
+      background-color: #17a2b8;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+
+      &:hover {
+        background-color: #138496;
+      }
+    }
+  }
+
+  .errorText {
+    color: #dc3545;
+    font-size: 0.9rem;
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .cartItem {
+    display: grid;
+    grid-template-columns: 60px 1fr auto auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid #eee;
+
+    img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 0.5rem;
+    }
+
+    .details {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+
+      strong {
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
+        white-space: nowrap;
+      }
+
+      p {
+        font-size: 0.95rem;
+        color: #555;
+      }
+    }
+
+    .quantityControls {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+
+      button {
+        padding: 0.3rem 0.7rem;
+        font-size: 1.2rem;
+        border: none;
+        background: #e2e6ea;
+        border-radius: 0.3rem;
+        cursor: pointer;
+      }
+
+      span {
+        width: 24px;
+        text-align: center;
+      }
+    }
+
+    .removeBtn {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #dc3545;
+      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+
+  .promoSection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    .applyBtn {
+      align-self: start;
+      padding: 0.5rem 1rem;
+      background-color: #ffc107;
+      color: black;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+
+      &:hover {
+        background-color: #e0a800;
+      }
+    }
+
+    .discountNotice {
+      margin-top: 0.5rem;
+      color: green;
+      font-weight: bold;
+    }
+  }
+
+  .submitOrderBtn {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin-top: 1rem;
+
+    &:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+  }
+
+  .smsButton {
+    padding: 0.5rem 1rem;
+    margin: 0.3rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+
+    &.confirm {
+      background-color: #007bff;
+      color: white;
+    }
+
+    &.send {
+      background-color: #6c757d;
+      color: white;
+    }
+  }
+}
+
+.orderFormWrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  font-family: 'Arial', sans-serif;
+  background-color: #f8f9fa;
+}
+
+.orderForm {
+  flex: 1 1 400px;
+  max-width: 600px;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  h2 {
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+    color: #333;
+  }
+
+  h3 {
+    margin-top: 1.5rem;
+    font-size: 1.2rem;
+    color: #555;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: none;
+      border-color: #007bff;
+      background: #f0f8ff;
+    }
+  }
+
+  .address-group {
+    display: flex;
+    gap: 1rem;
+
+    .locate-btn {
+      white-space: nowrap;
+      padding: 0.75rem 1rem;
+      background-color: #17a2b8;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+
+      &:hover {
+        background-color: #138496;
+      }
+    }
+  }
+
+  .errorText {
+    color: #dc3545;
+    font-size: 0.9rem;
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .cartItem {
+    display: grid;
+    grid-template-columns: 60px 1fr auto auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid #eee;
+
+    img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 0.5rem;
+    }
+
+    .details {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+
+      strong {
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
+        white-space: nowrap;
+      }
+
+      p {
+        font-size: 0.95rem;
+        color: #555;
+      }
+    }
+
+    .quantityControls {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+
+      button {
+        padding: 0.3rem 0.7rem;
+        font-size: 1.2rem;
+        border: none;
+        background: #e2e6ea;
+        border-radius: 0.3rem;
+        cursor: pointer;
+      }
+
+      span {
+        width: 24px;
+        text-align: center;
+      }
+    }
+
+    .removeBtn {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #dc3545;
+      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+
+  .promoSection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    .applyBtn {
+      align-self: start;
+      padding: 0.5rem 1rem;
+      background-color: #ffc107;
+      color: black;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+
+      &:hover {
+        background-color: #e0a800;
+      }
+    }
+
+    .discountNotice {
+      margin-top: 0.5rem;
+      color: green;
+      font-weight: bold;
+    }
+  }
+
+  .submitOrderBtn {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin-top: 1rem;
+
+    &:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+  }
+
+  .smsButton {
+    padding: 0.5rem 1rem;
+    margin: 0.3rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+
+    &.confirm {
+      background-color: #007bff;
+      color: white;
+    }
+
+    &.send {
+      background-color: #6c757d;
+      color: white;
+    }
+  }
+}
+
+.mapContainer {
+  flex: 1 1 400px;
+  max-width: 600px;
+  height: 600px;
+
+  iframe,
+  .leaflet-container {
+    width: 100%;
+    height: 100%;
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@media (max-width: 768px) {
+  .orderFormWrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mapContainer,
+  .orderForm {
+    max-width: 100%;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .orderFormWrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mapContainer,
+  .orderForm {
+    max-width: 100%;
+  }
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.payButton {
+  background-color: #4CAF50; // зелений
+  color: white;
+  padding: 0.8rem 2rem;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  font-weight: 600;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    background-color: #45a049;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+}

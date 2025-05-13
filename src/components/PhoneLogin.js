@@ -33,7 +33,7 @@ const PhoneLogin = ({ onSuccess, setError }) => {
             const token = await result.user.getIdToken();
             localStorage.setItem('token', token);
 
-            const res = await fetch(`${process.env.REACT_APP_API_URL}/get-role`, {
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/auth/get-role`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const role = (await res.json()).role || 'user';

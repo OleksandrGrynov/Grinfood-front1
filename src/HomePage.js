@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import './HomePage.scss';
+import './styles/HomePage.scss';
 import { fetchPromotions, fetchMenu } from './api';
 import { Link, useNavigate } from 'react-router-dom';
 import Slider from 'react-slick';

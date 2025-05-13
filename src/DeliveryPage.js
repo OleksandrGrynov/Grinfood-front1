@@ -1,5 +1,5 @@
 import React from 'react';
-import './DeliveryPage.scss';
+import './styles/DeliveryPage.scss';
 
 const DeliveryPage = () => {
     return (

@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getAuth, updateProfile, sendEmailVerification, reload, onAuthStateChanged } from 'firebase/auth';
+import {
+    getAuth,
+    updateProfile,
+    reload,
+    onAuthStateChanged
+} from 'firebase/auth';
 import { Link } from 'react-router-dom';
+import './styles/ProfilePage.scss';
 
 const ProfilePage = () => {
     const auth = getAuth();
@@ -12,11 +18,12 @@ const ProfilePage = () => {
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [isEmailVerified, setIsEmailVerified] = useState(false);
+    const [isCheckingVerification, setIsCheckingVerification] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
-                await reload(firebaseUser); // ensure latest data
+                await reload(firebaseUser);
                 setUser(firebaseUser);
                 setName(firebaseUser.displayName || '');
                 setEmail(firebaseUser.email || '');
@@ -27,21 +34,118 @@ const ProfilePage = () => {
         return () => unsubscribe();
     }, [auth]);
 
+    // ✅ ДОДАНО: перевірка, якщо повернулися з email-посилання
+    useEffect(() => {
+        const searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.get('mode') === 'verifyEmail') {
+            const checkEmailVerification = async () => {
+                const currentUser = auth.currentUser;
+                if (currentUser) {
+                    await reload(currentUser);
+                    setIsEmailVerified(currentUser.emailVerified);
+                }
+            };
+            setTimeout(checkEmailVerification, 2000); // дати Firebase 2с
+        }
+    }, []);
+
+    useEffect(() => {
+        setIsCheckingVerification(true);
+        let attempts = 0;
+        const maxAttempts = 20;
+
+        const interval = setInterval(async () => {
+            const currentUser = auth.currentUser;
+            if (currentUser) {
+                await reload(currentUser);
+                const refreshedUser = getAuth().currentUser;
+                if (refreshedUser?.emailVerified) {
+                    setIsEmailVerified(true);
+                    setIsCheckingVerification(false);
+                    clearInterval(interval);
+                }
+            }
+
+            attempts++;
+            if (attempts >= maxAttempts) {
+                console.warn("⏱ Перевірка email закінчилась — таймаут.");
+                setIsCheckingVerification(false);
+                clearInterval(interval);
+            }
+        }, 3000);
+
+        return () => {
+            clearInterval(interval);
+            setIsCheckingVerification(false);
+        };
+    }, [auth]);
+
     const handleSendVerification = async () => {
         try {
             if (user) {
-                await sendEmailVerification(user);
+                const res = await fetch(`${process.env.REACT_APP_API_URL}/send-verification-email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: user.email, uid: user.uid })
+                });
+
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || 'Не вдалося надіслати лист');
+
                 alert('✅ Лист підтвердження надіслано на вашу пошту.');
-                setTimeout(async () => {
-                    await reload(user);
-                    setIsEmailVerified(user.emailVerified);
-                }, 3000);
             }
         } catch (error) {
             console.error('❌ Error sending verification email:', error);
             alert('Помилка при надсиланні листа підтвердження.');
         }
     };
+    const handleDeleteAccount = async () => {
+        if (!window.confirm('Ви справді хочете видалити акаунт? Цю дію не можна скасувати.')) return;
+
+        try {
+            const token = await user.getIdToken(true);
+
+            // 1. Видалення з бази (бекенд)
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/delete-user`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.error || 'Помилка видалення на бекенді');
+
+            // 2. Видалення акаунта у Firebase
+            await user.delete();
+
+            // 3. Очистка і редірект
+            localStorage.clear();
+            alert('✅ Ваш акаунт успішно видалено.');
+            window.location.href = '/';
+
+        } catch (error) {
+            console.error('❌ Error deleting account:', error);
+
+            if (error.code === 'auth/requires-recent-login') {
+                alert('⚠️ Увійдіть повторно, щоб видалити акаунт.');
+            } else {
+                // можливо, акаунт уже був видалений — спробуємо перевірити
+                try {
+                    await reload(user); // якщо видасть помилку — значить, акаунта вже нема
+                    alert('❌ Помилка при видаленні акаунта.');
+                } catch {
+                    localStorage.clear();
+                    alert('⚠️ Акаунт уже був видалений. Вас буде перенаправлено.');
+                    window.location.href = '/';
+                }
+            }
+        }
+    };
+
+
+
 
     const handleSave = async () => {
         setSuccessMessage('');
@@ -57,11 +161,11 @@ const ProfilePage = () => {
             if (newEmail.trim() !== '' && newEmail !== email) {
                 const token = await user.getIdToken(true);
 
-                const response = await fetch('http://localhost:5000/api/update-email', {
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/update-email`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        Authorization: `Bearer ${token}`
                     },
                     body: JSON.stringify({ newEmail })
                 });
@@ -72,17 +176,22 @@ const ProfilePage = () => {
 
                 if (!response.ok) {
                     console.error('❌ Backend response:', result);
-                    throw new Error(isJSON ? result.error : `Server returned HTML: ${result.slice(0, 100)}...`);
+                    throw new Error(isJSON ? result.error : 'Server error');
                 }
 
-                await user.getIdToken(true);  // оновити токен ще раз після зміни
+                await user.getIdToken(true);
                 await reload(user);
 
                 setEmail(user.email || newEmail);
                 setNewEmail('');
                 setIsEmailVerified(user.emailVerified || false);
 
-                await sendEmailVerification(user);
+                await fetch(`${process.env.REACT_APP_API_URL}/send-verification-email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: newEmail, uid: user.uid })
+                });
+
                 alert('✅ Лист підтвердження на нову пошту відправлено!');
             }
         };
@@ -92,17 +201,16 @@ const ProfilePage = () => {
             setSuccessMessage('✅ Профіль оновлено успішно!');
         } catch (error) {
             console.error('❌ Error updating profile:', error);
-
-            // 🛡️ Якщо токен протермінований — спробувати оновити токен і повторити ще раз
-            if (error.code === 'auth/user-token-expired' || error.message.includes('token-expired')) {
+            if (
+                error.code === 'auth/user-token-expired' ||
+                error.message.includes('token-expired')
+            ) {
                 try {
-                    console.log('🔄 Token expired, refreshing...');
                     await user.getIdToken(true);
-                    await tryUpdateProfile();  // повторно викликати
+                    await tryUpdateProfile();
                     setSuccessMessage('✅ Профіль оновлено після оновлення токена!');
                 } catch (innerError) {
-                    console.error('❌ Retry after token refresh failed:', innerError);
-                    setErrorMessage(innerError.message || 'Помилка при повторній спробі оновлення профілю.');
+                    setErrorMessage(innerError.message || 'Помилка при повторній спробі.');
                 }
             } else {
                 setErrorMessage(error.message || 'Помилка при оновленні профілю.');
@@ -110,108 +218,72 @@ const ProfilePage = () => {
         }
     };
 
-
     if (loading) return <p>Завантаження профілю...</p>;
 
     return (
-        <div style={{
-            maxWidth: '500px',
-            margin: '50px auto',
-            padding: '20px',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            background: '#fff'
-        }}>
+        <div className="profile-container">
             <h2>Мій профіль</h2>
 
-            <label style={{ display: 'block', marginBottom: '10px' }}>
+            <label>
                 Ім'я:
                 <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    style={{
-                        width: '100%', padding: '10px', marginTop: '5px',
-                        borderRadius: '6px', border: '1px solid #ccc'
-                    }}
                 />
             </label>
 
-            <label style={{ display: 'block', marginBottom: '10px' }}>
+            <label>
                 Поточний Email:
-                <div style={{
-                    display: 'flex', alignItems: 'center',
-                    gap: '10px', marginTop: '5px'
-                }}>
-                    <input
-                        type="email"
-                        value={email}
-                        disabled
-                        style={{
-                            flexGrow: 1, padding: '10px',
-                            borderRadius: '6px', border: '1px solid #ccc',
-                            background: '#eee'
-                        }}
-                    />
+                <div className="email-row">
+                    <input type="email" value={email} disabled />
                     {isEmailVerified ? (
-                        <span style={{ color: 'green', fontWeight: 'bold' }}>✅ Підтверджено</span>
+                        <span className="verified">✅ Підтверджено</span>
                     ) : (
-                        <button
-                            onClick={handleSendVerification}
-                            style={{
-                                color: 'red',
-                                border: 'none',
-                                background: 'none',
-                                cursor: 'pointer',
-                                fontWeight: 'bold'
-                            }}
-                        >
-                            🔴 Не підтверджено
-                        </button>
+                        <div className="not-verified-wrapper">
+                            <button onClick={handleSendVerification} className="not-verified">
+                                🔴 Не підтверджено
+                            </button>
+                            {isCheckingVerification && (
+                                <span className="checking">⏳ Перевіряємо...</span>
+                            )}
+                        </div>
                     )}
                 </div>
             </label>
 
-            <label style={{ display: 'block', marginBottom: '20px' }}>
+            <label>
                 Новий Email:
                 <input
                     type="email"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
                     placeholder="Введіть нову пошту"
-                    style={{
-                        width: '100%', padding: '10px', marginTop: '5px',
-                        borderRadius: '6px', border: '1px solid #ccc'
-                    }}
                 />
             </label>
 
             <button
                 onClick={handleSave}
-                style={{
-                    width: '100%', padding: '12px',
-                    backgroundColor: '#4CAF50', color: 'white',
-                    border: 'none', borderRadius: '6px',
-                    cursor: 'pointer', fontSize: '16px',
-                    marginBottom: '15px'
-                }}
+                className="save-button"
+                disabled={!isEmailVerified}
+                title={!isEmailVerified ? 'Підтвердіть email, щоб зберегти' : ''}
             >
                 Зберегти зміни
             </button>
 
-            {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
-            {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
 
-            <Link to="/" style={{
-                display: 'block',
-                marginTop: '20px',
-                textAlign: 'center',
-                textDecoration: 'none',
-                color: '#4285F4',
-                fontWeight: 'bold'
-            }}>
-                ⬅️ Повернутися на головну
-            </Link>
+            {successMessage && <p className="success">{successMessage}</p>}
+            {errorMessage && <p className="error">{errorMessage}</p>}
+
+            <Link to="/" className="back-link">⬅️ Повернутися на головну</Link>
+            <button
+                onClick={handleDeleteAccount}
+                className="delete-button"
+                style={{ background: '#c62828', color: 'white', marginTop: '20px' }}
+            >
+                ❌ Видалити акаунт
+            </button>
+
         </div>
     );
 };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getAuth, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 
 const SignIn = ({ onSuccess, setError, onForgotPassword }) => {
@@ -9,22 +9,17 @@ const SignIn = ({ onSuccess, setError, onForgotPassword }) => {
 
     const handleSignIn = async (e) => {
         e.preventDefault();
+        const auth = getAuth();
+
         try {
-            const response = await fetch(`${process.env.REACT_APP_API_URL}/signin`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
+            // 🔐 Вхід через Firebase
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const idToken = await userCredential.user.getIdToken();
 
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Вхід не вдався');
-
-            const auth = getAuth();
-            await signInWithCustomToken(auth, data.token);
-
-            const idToken = await auth.currentUser.getIdToken();
+            // 💾 Зберігаємо токен у localStorage
             localStorage.setItem('token', idToken);
 
+            // 📌 Отримання ролі з бекенду
             const roleRes = await fetch(`${process.env.REACT_APP_API_URL}/get-role`, {
                 headers: {
                     Authorization: `Bearer ${idToken}`,
@@ -35,7 +30,7 @@ const SignIn = ({ onSuccess, setError, onForgotPassword }) => {
             const role = roleData.role || 'user';
             localStorage.setItem('role', role);
 
-            console.log('✅ Вхід успішний ➡️ Role:', role);
+            console.log('✅ Успішний вхід ➡️ Роль:', role);
 
             if (onSuccess) onSuccess();
             navigate(role === 'manager' ? '/manager' : '/');

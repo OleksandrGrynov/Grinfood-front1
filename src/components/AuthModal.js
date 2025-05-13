@@ -2,33 +2,16 @@ import React, { useState } from 'react';
 import SignIn from './SignIn';
 import SignUp from './SignUp';
 import GoogleLoginButton from './GoogleLoginButton';
-import './AuthModal.scss';
+import ForgotPasswordModal from './ForgotPasswordModal';
+import '../styles/AuthModal.scss';
 
 const AuthModal = ({ mode, onClose, switchMode }) => {
     const [error, setError] = useState('');
+    const [showForgotModal, setShowForgotModal] = useState(false);
 
     const handleSuccess = () => {
         setError('');
         onClose();
-    };
-
-    const handleForgotPassword = () => {
-        const email = prompt('Введіть вашу електронну пошту для скидання пароля:');
-        if (email) {
-            fetch(`${process.env.REACT_APP_API_URL}/forgot-password`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
-            })
-                .then(res => res.json())
-                .then(data => {
-                    alert('📧 Інструкції надіслано на вашу пошту');
-                })
-                .catch(err => {
-                    console.error('❌ Помилка скидання пароля:', err);
-                    setError('Не вдалося надіслати інструкції. Спробуйте ще раз.');
-                });
-        }
     };
 
     return (
@@ -39,7 +22,11 @@ const AuthModal = ({ mode, onClose, switchMode }) => {
 
                 {mode === 'signin' ? (
                     <>
-                        <SignIn onSuccess={handleSuccess} setError={setError} onForgotPassword={handleForgotPassword} />
+                        <SignIn
+                            onSuccess={handleSuccess}
+                            setError={setError}
+                            onForgotPassword={() => setShowForgotModal(true)}
+                        />
                         {error && <p className="error-text">❌ {error}</p>}
                         <GoogleLoginButton onSuccess={handleSuccess} setError={setError} />
                         <p className="switch-text">
@@ -56,6 +43,10 @@ const AuthModal = ({ mode, onClose, switchMode }) => {
                             <span className="switch-link" onClick={() => switchMode('signin')}> Увійти</span>
                         </p>
                     </>
+                )}
+
+                {showForgotModal && (
+                    <ForgotPasswordModal onClose={() => setShowForgotModal(false)} />
                 )}
             </div>
         </div>

@@ -1,0 +1,64 @@
+.order-history-dialog {
+  .order-block {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+  }
+
+  .order-item-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+
+  .order-item-card {
+    height: 280px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    text-align: center;
+    background-color: #fff;
+  }
+
+  .order-item-image {
+    width: 100%;
+    height: 140px;
+    object-fit: cover; // 🔥 це ключове
+  }
+
+  .MuiCardContent-root {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px;
+  }
+}
+@media (max-width: 768px) {
+  .order-history-dialog {
+    padding: 0 1rem;
+
+    .order-item-grid {
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .order-item-card {
+      height: auto;
+      min-height: 240px;
+      border-radius: 10px;
+    }
+
+    .order-item-image {
+      height: 120px;
+    }
+
+    .MuiCardContent-root {
+      padding: 10px;
+    }
+  }
+}
+

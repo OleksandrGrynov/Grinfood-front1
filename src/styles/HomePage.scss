@@ -319,3 +319,64 @@
   max-height: 2000px;
   opacity: 1;
 }
+
+@media (max-width: 768px) {
+  .homepage {
+    padding: 16px;
+  }
+
+  .promo-carousel {
+    margin: 24px 0;
+
+    .carousel-card img {
+      height: 140px;
+    }
+  }
+
+  .section h2 {
+    font-size: 20px;
+  }
+
+  .product-grid,
+  .category-grid,
+  .category-mosaic {
+    justify-content: center;
+  }
+
+  .product-card,
+  .category-card {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .category-tile,
+  .category-tile.large {
+    flex: 1 1 100%;
+    max-width: 100%;
+    aspect-ratio: unset;
+
+    img {
+      height: auto;
+    }
+  }
+
+  .delivery-full {
+    padding: 0 12px;
+
+    h2.delivery-title {
+      font-size: 22px;
+    }
+
+    h3 {
+      font-size: 18px;
+    }
+
+    p, li {
+      font-size: 15px;
+    }
+  }
+
+  .advantages-list li::before {
+    font-size: 16px;
+  }
+}

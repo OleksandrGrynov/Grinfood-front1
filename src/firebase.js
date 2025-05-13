@@ -18,8 +18,8 @@ self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 console.log("SITE KEY:", process.env.REACT_APP_RECAPTCHA_V3_KEY);
 
 initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(process.env.REACT_APP_RECAPTCHA_V3_KEY),
-    isTokenAutoRefreshEnabled: true,
+   provider: new ReCaptchaV3Provider(process.env.REACT_APP_RECAPTCHA_V3_KEY),
+isTokenAutoRefreshEnabled: true,
 });
 
 const auth = getAuth(app);

@@ -3,6 +3,7 @@ import {
     Container, Typography, Card, CardContent, Button,
     Grid, Chip, Stack, CircularProgress, Snackbar, Alert, Grow
 } from '@mui/material';
+import { getAuth } from "firebase/auth";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -11,22 +12,42 @@ const ManagerOrders = () => {
     const [loading, setLoading] = useState(true);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-    const token = localStorage.getItem('token');
+    const getToken = async () => {
+        const user = getAuth().currentUser;
+        return user ? await user.getIdToken() : null;
+    };
 
     const fetchOrders = async () => {
+        setLoading(true);
         try {
-            const pendingRes = await fetch(`${API_URL}/orders/by-status/pending`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const confirmedRes = await fetch(`${API_URL}/orders/by-status/confirmed`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const token = await getToken();
+            if (!token) throw new Error('No token');
+
+            const [pendingRes, confirmedRes] = await Promise.all([
+                fetch(`${API_URL}/orders/by-status/pending`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+                fetch(`${API_URL}/orders/by-status/confirmed`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
+            ]);
 
             const pending = await pendingRes.json();
             const confirmed = await confirmedRes.json();
 
-            const filtered = [...pending, ...confirmed].filter(o => o.createdAt);
-            setOrders(filtered);
+            const normalized = [...pending, ...confirmed]
+                .filter(o => o.createdAt)
+                .map(o => ({
+                    ...o,
+                    createdAt: o.createdAt?.seconds
+                        ? new Date(o.createdAt.seconds * 1000)
+                        : typeof o.createdAt === 'string'
+                            ? new Date(o.createdAt)
+                            : null
+                }))
+                .sort((a, b) => b.createdAt?.getTime() - a.createdAt?.getTime());
+
+            setOrders(normalized);
         } catch (error) {
             showSnackbar('Не вдалося завантажити замовлення', 'error');
         } finally {
@@ -36,6 +57,9 @@ const ManagerOrders = () => {
 
     const updateStatus = async (orderId, newStatus) => {
         try {
+            const token = await getToken();
+            if (!token) throw new Error('No token');
+
             const res = await fetch(`${API_URL}/orders/${orderId}/status`, {
                 method: 'PATCH',
                 headers: {
@@ -121,6 +145,14 @@ const ManagerOrders = () => {
                                             <Typography>📍 Адреса: {order.address}</Typography>
                                             <Typography>💰 Сума: {order.total} грн</Typography>
                                             <Typography>💳 Оплата: {order.paymentMethod}</Typography>
+                                            <Typography>
+                                                🕒 Створено: {order.createdAt ? order.createdAt.toLocaleString('uk-UA') : '—'}
+                                            </Typography>
+
+
+
+
+
 
                                             <Typography variant="subtitle2" sx={{ mt: 2 }}>🧾 Замовлені товари:</Typography>
                                             <ul style={{ marginTop: '5px', marginBottom: '10px', paddingLeft: '20px' }}>

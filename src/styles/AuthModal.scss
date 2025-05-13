@@ -8,15 +8,20 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding-top: 100px;
+    padding: 40px 16px;
     z-index: 999;
+
+    @media (max-width: 480px) {
+        align-items: flex-start;
+        padding: 40px 12px;
+    }
 }
 
 .modal-content {
     background: white;
     padding: 2rem;
     border-radius: 16px;
-    width: 90%;
+    width: 100%;
     max-width: 420px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
     position: relative;
@@ -103,8 +108,8 @@
     .close-button {
         position: absolute;
         top: 10px;
-        height: 50px;
-        width: 50px;
+        height: 40px;
+        width: 40px;
         right: 12px;
         background: transparent;
         border: none;
@@ -117,7 +122,15 @@
             color: #000;
         }
     }
+
+    @media (max-width: 480px) {
+        padding: 1.2rem 1rem;
+        border-radius: 12px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
 }
+
 .forgot-password {
     margin-top: 10px;
     color: #007bff;

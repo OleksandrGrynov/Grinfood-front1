@@ -4,7 +4,7 @@ import {
     TileLayer,
     Marker,
     Popup,
-    Polygon,
+    Polyline,
     useMap,
     ZoomControl
 } from 'react-leaflet';
@@ -12,7 +12,9 @@ import L from 'leaflet';
 import axios from 'axios';
 import 'leaflet/dist/leaflet.css';
 
-// 🧭 Стилі для ZoomControl вбудовані
+const RESTAURANT_COORDS = [49.422983, 26.987133];
+const ORS_API_KEY = process.env.REACT_APP_ORS_API_KEY;
+
 const customZoomStyle = `
   .leaflet-control-zoom {
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
@@ -34,48 +36,34 @@ const markerIcon = new L.Icon({
     popupAnchor: [0, -30],
 });
 
-// Зони
-const zones = [
-    {
-        name: 'Зона 1',
-        color: '#fdd83588',
-        coordinates: [
-            [49.4245, 26.9757],
-            [49.4265, 26.9907],
-            [49.418, 26.995],
-            [49.416, 26.978],
-        ],
-    },
-    {
-        name: 'Зона 2',
-        color: '#66bb6a88',
-        coordinates: [
-            [49.4305, 26.9700],
-            [49.4325, 26.9850],
-            [49.4240, 26.9860],
-            [49.4220, 26.9720],
-        ],
-    },
-];
-
-const MapUpdater = ({ position }) => {
+const MapUpdater = ({ from, to }) => {
     const map = useMap();
     useEffect(() => {
-        if (position) {
-            map.setView(position, 17);
+        if (from && to) {
+            const bounds = L.latLngBounds([from, to]);
+            map.fitBounds(bounds, { padding: [50, 50] });
         }
-    }, [position, map]);
+    }, [from, to, map]);
     return null;
 };
 
 const MapView = ({ address }) => {
-    const [position, setPosition] = useState(null);
+    const [userCoords, setUserCoords] = useState(null);
+    const [route, setRoute] = useState([]);
+    const [status, setStatus] = useState('');
 
     useEffect(() => {
-        const fetchCoordinates = async () => {
-            if (!address) return;
+        const fetchCoordinatesAndRoute = async () => {
+            if (!address || address.trim().length < 3) {
+                setStatus('');
+                setUserCoords(null);
+                setRoute([]);
+                return;
+            }
+
+            setStatus('🔍 Пошук адреси...');
             try {
-                const { data } = await axios.get('https://nominatim.openstreetmap.org/search', {
+                const geo = await axios.get('https://nominatim.openstreetmap.org/search', {
                     params: {
                         q: `Хмельницький, ${address}`,
                         format: 'json',
@@ -83,56 +71,81 @@ const MapView = ({ address }) => {
                     },
                 });
 
-                if (data.length > 0) {
-                    setPosition([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+                if (geo.data.length > 0) {
+                    const coords = [parseFloat(geo.data[0].lat), parseFloat(geo.data[0].lon)];
+                    setUserCoords(coords);
+                    setStatus('✅ Адресу знайдено');
+
+                    const orsRes = await axios.post(
+                        'https://api.openrouteservice.org/v2/directions/driving-car/geojson',
+                        {
+                            coordinates: [
+                                [RESTAURANT_COORDS[1], RESTAURANT_COORDS[0]],
+                                [coords[1], coords[0]]
+                            ]
+                        },
+                        {
+                            headers: {
+                                Authorization: ORS_API_KEY,
+                                'Content-Type': 'application/json'
+                            }
+                        }
+                    );
+
+                    const geometry = orsRes.data.features[0].geometry.coordinates;
+                    const convertedRoute = geometry.map(coord => [coord[1], coord[0]]);
+                    setRoute(convertedRoute);
+                } else {
+                    setUserCoords(null);
+                    setRoute([]);
+                    setStatus('❌ Адресу не знайдено');
                 }
             } catch (error) {
-                console.error('Geo Error:', error);
+                console.error('Geo or Route Error:', error);
+                setUserCoords(null);
+                setRoute([]);
+                setStatus('❌ Помилка при обробці адреси');
             }
         };
 
-        fetchCoordinates();
+        fetchCoordinatesAndRoute();
     }, [address]);
 
     return (
-        <>
-            {/* Вбудований стиль */}
+        <div style={{ height: '100%' }}>
             <style>{customZoomStyle}</style>
 
+            {status && (
+                <div style={{ marginBottom: '8px', fontWeight: 'bold', color: status.includes('❌') ? 'red' : 'green' }}>
+                    {status}
+                </div>
+            )}
+
             <MapContainer
-                center={[49.422983, 26.987133]}
+                center={RESTAURANT_COORDS}
                 zoom={13}
                 scrollWheelZoom={true}
-                style={{ height: '100%', width: '100%' }}
-                zoomControl={false} // Ховаємо стандартний zoom
+                style={{ height: '550px', width: '100%' }}
+                zoomControl={false}
             >
-                {/* Нове положення ZoomControl */}
                 <ZoomControl position="bottomright" />
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-                <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
+                <Marker position={RESTAURANT_COORDS} icon={markerIcon}>
+                    <Popup>Заклад</Popup>
+                </Marker>
 
-                {zones.map((zone, idx) => (
-                    <Polygon
-                        key={idx}
-                        positions={zone.coordinates}
-                        pathOptions={{ color: zone.color }}
-                    >
-                        <Popup>{zone.name}</Popup>
-                    </Polygon>
-                ))}
-
-                {position && (
+                {userCoords && (
                     <>
-                        <MapUpdater position={position} />
-                        <Marker position={position} icon={markerIcon}>
+                        <Marker position={userCoords} icon={markerIcon}>
                             <Popup>Ваш будинок</Popup>
                         </Marker>
+                        {route.length > 0 && <Polyline positions={route} color="blue" />}
+                        <MapUpdater from={RESTAURANT_COORDS} to={userCoords} />
                     </>
                 )}
             </MapContainer>
-        </>
+        </div>
     );
 };
 
